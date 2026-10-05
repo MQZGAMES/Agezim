@@ -3,9 +3,14 @@
 Clone enxuto de **Age of Empires** feito em HTML5 Canvas (JavaScript puro, sem dependências, sem imagens: todos os
 gráficos são desenhados por código). O documento de design e o roadmap estão em [DESIGN.md](DESIGN.md).
 
+## Jogar online
+
+**<https://mqzgames.github.io/Agezim/>** — publicado automaticamente pelo GitHub Pages a cada push na branch `main`.
+
 ## Como jogar
 
-* **Opção 1 (recomendada):** dê duplo clique em `Jogar Agezim.bat` — sobe um servidor local e abre o navegador.
+* **Opção 0:** pelo link online acima (não precisa instalar nada).
+* **Opção 1 (rodar localmente):** dê duplo clique em `Jogar Agezim.bat` — sobe um servidor local e abre o navegador.
 * **Opção 2:** `node devserver.js` e abra <http://127.0.0.1:8123>.
 * **Opção 3:** abra `index.html` direto no navegador (Chrome/Edge/Firefox atuais).
 
