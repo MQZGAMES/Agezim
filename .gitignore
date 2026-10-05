@@ -1,0 +1,5 @@
+﻿# ferramentas locais
+.claude/
+.snaps/
+node_modules/
+*.log

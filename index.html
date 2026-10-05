@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agezim — Era dos Reinos</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%233a2616'/%3E%3Cpath d='M12 50 32 10l20 40z' fill='%23e0b955'/%3E%3Cpath d='M22 50 32 28l10 22z' fill='%233d7be0'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="game">
+  <canvas id="view"></canvas>
+
+  <!-- barra superior -->
+  <div id="topbar">
+    <div class="res" title="Comida"><img id="i-food"><span id="v-food">0</span><small id="g-food" title="Aldeões coletando">0</small></div>
+    <div class="res" title="Madeira"><img id="i-wood"><span id="v-wood">0</span><small id="g-wood">0</small></div>
+    <div class="res" title="Ouro"><img id="i-gold"><span id="v-gold">0</span><small id="g-gold">0</small></div>
+    <div class="res" title="Pedra"><img id="i-stone"><span id="v-stone">0</span><small id="g-stone">0</small></div>
+    <div class="res pop" title="População / limite"><img id="i-pop"><span id="v-pop">0/0</span></div>
+    <div class="spacer"></div>
+    <button id="btnIdle" class="tb" title="Aldeões ociosos (.)"><img id="i-idle"><span id="v-idle">0</span></button>
+    <div class="res clock" title="Tempo de jogo"><img id="i-time"><span id="clock">00:00</span></div>
+    <button id="btnSound" class="tb sq" title="Som (M)">♪</button>
+    <button id="btnHelp" class="tb sq" title="Ajuda (F1)">?</button>
+    <button id="btnMenu" class="tb sq" title="Pausa (P)">❚❚</button>
+  </div>
+
+  <div id="toasts"></div>
+
+  <!-- painel inferior -->
+  <div id="bottom">
+    <div id="cmdWrap"><div id="cmd"></div></div>
+    <div id="infoWrap"><div id="info"></div></div>
+    <div id="miniWrap"><canvas id="mini"></canvas></div>
+  </div>
+
+  <div id="tip"></div>
+
+  <!-- tela inicial / carregamento -->
+  <div id="start" class="screen on">
+    <div class="card">
+      <div class="crest">⚔</div>
+      <h1>AGEZIM</h1>
+      <div class="sub">Era dos Reinos</div>
+      <div id="loadWrap" class="hidden"><div id="loadBar"><div id="loadFill"></div></div><div id="loadText">Gerando a ilha…</div></div>
+      <div id="startOpts">
+        <label class="opt"><input type="checkbox" id="optAI" checked> Reino inimigo (IA)</label>
+        <div class="seedrow">Semente do mapa <input id="optSeed" type="number" value="1" min="1" max="99999"> <button id="btnRand" class="mini">🎲</button></div>
+        <button id="btnStart" class="big">Iniciar jogo</button>
+        <div class="tips">Construa, colete, treine e conquiste a ilha.<br><span>Durante o jogo, F1 mostra todos os controles</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- pausa -->
+  <div id="pause" class="screen">
+    <div class="card small">
+      <h2>Jogo pausado</h2>
+      <button class="big" id="pResume">Continuar</button>
+      <button class="big sec" id="pHelp">Controles</button>
+      <button class="big sec" id="pRestart">Reiniciar partida</button>
+    </div>
+  </div>
+
+  <!-- ajuda -->
+  <div id="help" class="screen">
+    <div class="card wide">
+      <h2>Controles</h2>
+      <div class="cols">
+        <div>
+          <h3>Mouse</h3>
+          <ul>
+            <li><b>Clique esquerdo</b> — selecionar</li>
+            <li><b>Arrastar</b> — seleção em grupo (Shift soma)</li>
+            <li><b>Duplo clique</b> — todos do mesmo tipo na tela</li>
+            <li><b>Clique direito</b> — mover, coletar, caçar, construir, atacar, entregar</li>
+            <li><b>Prédio selecionado + direito</b> — ponto de reunião</li>
+            <li><b>Roda</b> — zoom · <b>Botão do meio</b> — arrastar câmera</li>
+            <li><b>Minimapa</b> — esquerdo move a câmera, direito comanda</li>
+          </ul>
+          <h3>Construção</h3>
+          <ul>
+            <li>Selecione aldeões e escolha a construção no painel</li>
+            <li><b>Shift</b> — continuar construindo / enfileirar</li>
+            <li><b>Muro</b>: arraste para fazer uma linha</li>
+            <li><b>Portão</b>: pode ficar sobre um muro; <b>R</b> gira</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Teclado</h3>
+          <ul>
+            <li><b>Setas</b> / bordas da tela — mover câmera</li>
+            <li><b>Q W E R T · A S D F G · Z X C V B</b> — atalhos do painel de comandos</li>
+            <li><b>Ctrl + 1…9</b> — criar grupo · <b>1…9</b> — selecionar (2× centraliza)</li>
+            <li><b>.</b> — próximo aldeão ocioso · <b>H</b> — Centro da Cidade</li>
+            <li><b>Espaço</b> — ir ao último alerta</li>
+            <li><b>Del</b> — demolir · <b>Esc</b> — cancelar/menu</li>
+            <li><b>P</b> — pausa · <b>M</b> — som · <b>F1</b> — ajuda</li>
+          </ul>
+          <h3>Objetivo</h3>
+          <ul>
+            <li>Destrua todas as construções do reino inimigo.</li>
+            <li>Proteja as suas: construa muros, portões e um exército.</li>
+          </ul>
+        </div>
+      </div>
+      <button class="big" id="helpClose">Fechar</button>
+    </div>
+  </div>
+
+  <!-- fim de jogo -->
+  <div id="end" class="screen">
+    <div class="card small">
+      <h1 id="endTitle">VITÓRIA!</h1>
+      <p id="endText"></p>
+      <div id="endStats"></div>
+      <button class="big" id="eAgain">Jogar novamente</button>
+      <button class="big sec" id="eLook">Continuar observando</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/util.js"></script>
+<script src="js/data.js"></script>
+<script src="js/map.js"></script>
+<script src="js/art_core.js"></script>
+<script src="js/art_units.js"></script>
+<script src="js/art_nature.js"></script>
+<script src="js/art_buildings.js"></script>
+<script src="js/art_ui.js"></script>
+<script src="js/path.js"></script>
+<script src="js/game.js"></script>
+<script src="js/units.js"></script>
+<script src="js/fx.js"></script>
+<script src="js/render.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
