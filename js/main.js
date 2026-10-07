@@ -37,7 +37,7 @@
 
     // câmera no início do jogador
     const s = map.starts[0];
-    Cam.zoom = clamp(Cam.H / 760, 0.9, 1.35);
+    Cam.zoom = clamp(Math.min(Cam.H / 760, Cam.W / 640), 0.75, 1.35);
     Cam.centerOn(s.x, s.y + 1.5);
 
     // pré-aquece sprites comuns
@@ -65,6 +65,7 @@
     state.running = true;
     state.last = performance.now();
     G.toast('Selecione seus aldeões e comece a coletar!', 'info');
+    if (IS_TOUCH && innerHeight > innerWidth) setTimeout(() => G.toast('Dica: gire o aparelho para a horizontal', 'warn'), 1800);
   }
 
   function restart(seed) {
@@ -105,6 +106,22 @@
   $('eAgain').addEventListener('click', () => restart());
   $('eLook').addEventListener('click', () => { $('end').classList.remove('on'); G.over = null; G.aiOn = false; state.endShown = true; });
   window.addEventListener('resize', () => { if (Render.cv && state.booted) Render.resize(); });
+
+  /* ---------- toque / tela cheia ---------- */
+  if (IS_TOUCH) document.body.classList.add('touch');
+  const fsEl = document.documentElement;
+  if (fsEl.requestFullscreen || fsEl.webkitRequestFullscreen) document.body.classList.add('canfs');
+  const toggleFull = () => {
+    const on = document.fullscreenElement || document.webkitFullscreenElement;
+    if (on) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); return; }
+    const p = (fsEl.requestFullscreen || fsEl.webkitRequestFullscreen).call(fsEl);
+    const lock = () => { try { if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {}); } catch (_) {} };
+    if (p && p.then) p.then(lock).catch(() => {}); else lock();
+  };
+  $('btnFull').addEventListener('click', toggleFull);
+  $('pFull').addEventListener('click', toggleFull);
+  $('pSound').addEventListener('click', () => { Sfx.init(); const on = Sfx.toggle(); $('pSound').textContent = 'Som: ' + (on ? 'ligado' : 'desligado'); });
+  window.addEventListener('orientationchange', () => setTimeout(() => { if (Render.cv && state.booted) Render.resize(); }, 250));
 
   // utilitário de desenvolvimento: grava o canvas em arquivo via devserver (POST /save)
   window.snap = async (name = 'snap', which = 'view') => {

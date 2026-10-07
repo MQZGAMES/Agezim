@@ -2,7 +2,10 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#2a1a0e">
 <title>Agezim — Era dos Reinos</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%233a2616'/%3E%3Cpath d='M12 50 32 10l20 40z' fill='%23e0b955'/%3E%3Cpath d='M22 50 32 28l10 22z' fill='%233d7be0'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -26,10 +29,13 @@
     <div class="res clock" title="Tempo de jogo"><img id="i-time"><span id="clock">00:00</span></div>
     <button id="btnSound" class="tb sq" title="Som (M)">♪</button>
     <button id="btnHelp" class="tb sq" title="Ajuda (F1)">?</button>
+    <button id="btnFull" class="tb sq" title="Tela cheia">⛶</button>
     <button id="btnMenu" class="tb sq" title="Pausa (P)">❚❚</button>
   </div>
 
   <div id="toasts"></div>
+  <button id="btnDesel" class="floatbtn" title="Desmarcar">✕ Desmarcar</button>
+  <div id="placeBar"><button id="placeOk" class="pb ok">✔ Construir</button><button id="placeNo" class="pb no">✖</button></div>
 
   <!-- painel inferior -->
   <div id="bottom">
@@ -62,6 +68,8 @@
       <h2>Jogo pausado</h2>
       <button class="big" id="pResume">Continuar</button>
       <button class="big sec" id="pHelp">Controles</button>
+      <button class="big sec" id="pSound">Som: ligado</button>
+      <button class="big sec" id="pFull">Tela cheia</button>
       <button class="big sec" id="pRestart">Reiniciar partida</button>
     </div>
   </div>
@@ -81,6 +89,15 @@
             <li><b>Prédio selecionado + direito</b> — ponto de reunião</li>
             <li><b>Roda</b> — zoom · <b>Botão do meio</b> — arrastar câmera</li>
             <li><b>Minimapa</b> — esquerdo move a câmera, direito comanda</li>
+          </ul>
+          <h3>Celular / toque</h3>
+          <ul>
+            <li><b>Toque</b> — selecionar; com unidades selecionadas, toque no chão/recurso/inimigo para comandar</li>
+            <li><b>Arrastar</b> — mover a câmera · <b>Pinça</b> — zoom</li>
+            <li><b>Segurar e arrastar</b> — seleção em grupo</li>
+            <li><b>Duplo toque</b> — todos do mesmo tipo na tela</li>
+            <li>Construir: escolha a construção, arraste para posicionar e toque em <b>✔ Construir</b></li>
+            <li><b>✕ Desmarcar</b> limpa a seleção</li>
           </ul>
           <h3>Construção</h3>
           <ul>

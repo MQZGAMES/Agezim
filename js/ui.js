@@ -47,6 +47,9 @@ const UI = {
       }
     });
     $('btnIdle').addEventListener('click', () => Input.cycleIdle());
+    $('btnDesel').addEventListener('click', () => { Input.cancelPlace(); Input.setMode(null); Input.select([]); });
+    $('placeOk').addEventListener('click', () => Input.confirmPlace());
+    $('placeNo').addEventListener('click', () => { Input.cancelPlace(); });
     $('btnSound').addEventListener('click', () => { Sfx.init(); const on = Sfx.toggle(); $('btnSound').classList.toggle('off', !on); });
     $('btnHelp').addEventListener('click', () => this.toggleHelp());
     $('btnMenu').addEventListener('click', () => this.togglePause());
@@ -71,9 +74,14 @@ const UI = {
       else Cam.centerOn(wx, wy);
     };
     let dragging = false;
-    cv.addEventListener('mousedown', (e) => { if (e.button === 0) { dragging = true; down(e, false); } else if (e.button === 2) down(e, true); });
-    window.addEventListener('mousemove', (e) => { if (dragging) down(e, false); });
-    window.addEventListener('mouseup', () => { dragging = false; });
+    cv.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      if (e.button === 0 || e.pointerType === 'touch') { dragging = true; try { cv.setPointerCapture(e.pointerId); } catch (_) {} down(e, false); }
+      else if (e.button === 2) down(e, true);
+    });
+    cv.addEventListener('pointermove', (e) => { if (dragging) down(e, false); });
+    const endDrag = () => { dragging = false; };
+    cv.addEventListener('pointerup', endDrag); cv.addEventListener('pointercancel', endDrag);
     cv.addEventListener('contextmenu', (e) => e.preventDefault());
   },
   bakeMinimap() { this.miniBase = G.map.bakeMinimap(this.mw * this.mdpr, this.mh * this.mdpr); },
@@ -155,6 +163,9 @@ const UI = {
     set(this.el.pop, `${used}/${cap}`);
     this.el.pop.parentElement.classList.toggle('warn', used >= cap);
     set(this.el.clock, fmtTime(G.time));
+    document.body.classList.toggle('hassel', G.sel.length > 0 || !!Input.placing);
+    $('placeBar').classList.toggle('on', !!Input.placing && !!Input.touchPlaced);
+    if (!Input.placing) Input.touchPlaced = false;
     this.slowTimer = (this.slowTimer || 0) - dt;
     if (this.slowTimer <= 0) {
       this.slowTimer = 0.2;
@@ -294,6 +305,7 @@ const UI = {
     html += `<div class="td">${c.desc || ''}</div>`;
     tip.innerHTML = html;
     tip.classList.add('on');
+    if (IS_TOUCH) { clearTimeout(this._tipT); this._tipT = setTimeout(() => this.hideTip(), 2600); }
     const r = this.slots[i].getBoundingClientRect();
     tip.style.left = Math.min(window.innerWidth - 300, Math.max(8, r.left)) + 'px';
     tip.style.top = (r.top - tip.offsetHeight - 8) + 'px';
@@ -482,9 +494,114 @@ const Input = {
     canvas.addEventListener('wheel', (e) => { e.preventDefault(); const r = canvas.getBoundingClientRect(); Cam.zoomAt(e.deltaY < 0 ? 1.12 : 1 / 1.12, e.clientX - r.left, e.clientY - r.top); }, { passive: false });
     canvas.addEventListener('mouseleave', () => { this.mouse.in = false; ui_hover = null; });
     canvas.addEventListener('mouseenter', () => { this.mouse.in = true; });
+    this.initTouch(canvas);
     window.addEventListener('keydown', (e) => this.onKey(e, true));
     window.addEventListener('keyup', (e) => this.onKey(e, false));
     window.addEventListener('blur', () => { this.keys.clear(); this.pan = null; });
+  },
+
+  /* ---------- toque ---------- */
+  initTouch(canvas) {
+    const opt = { passive: false };
+    canvas.addEventListener('touchstart', (e) => this.tStart(e), opt);
+    canvas.addEventListener('touchmove', (e) => this.tMove(e), opt);
+    canvas.addEventListener('touchend', (e) => this.tEnd(e), opt);
+    canvas.addEventListener('touchcancel', (e) => this.tEnd(e), opt);
+    this.t = { mode: null };
+  },
+  tpos(t) { const r = this.cv.getBoundingClientRect(); return [t.clientX - r.left, t.clientY - r.top]; },
+  tStart(e) {
+    e.preventDefault(); Sfx.init();
+    const T = this.t, ts = e.touches;
+    if (ts.length >= 2) {
+      clearTimeout(T.lp); this.drag = null;
+      const a = this.tpos(ts[0]), b = this.tpos(ts[1]);
+      Object.assign(T, { mode: 'pinch', d: Math.hypot(a[0] - b[0], a[1] - b[1]), mx: (a[0] + b[0]) / 2, my: (a[1] + b[1]) / 2 });
+      return;
+    }
+    const [x, y] = this.tpos(ts[0]);
+    Object.assign(T, { mode: 'down', x0: x, y0: y, x, y, lx: x, ly: y, moved: false });
+    if (this.placing) { T.mode = 'place'; this.touchPlaceAt(x, y, true); return; }
+    this.mouse.in = false;
+    if (!this.mode) {
+      T.lp = setTimeout(() => {
+        if (T.mode === 'down' && !T.moved) {
+          T.mode = 'box'; this.drag = { x0: T.x0, y0: T.y0, x1: T.x, y1: T.y, active: true, shift: false };
+          if (navigator.vibrate) navigator.vibrate(15);
+        }
+      }, 420);
+    }
+  },
+  tMove(e) {
+    e.preventDefault();
+    const T = this.t, ts = e.touches;
+    if (T.mode === 'pinch' && ts.length >= 2) {
+      const a = this.tpos(ts[0]), b = this.tpos(ts[1]);
+      const d = Math.hypot(a[0] - b[0], a[1] - b[1]), mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
+      if (T.d > 0) Cam.zoomAt(d / T.d, mx, my);
+      this.panScreen(-(mx - T.mx), -(my - T.my));
+      T.d = d; T.mx = mx; T.my = my;
+      return;
+    }
+    if (ts.length !== 1) return;
+    const [x, y] = this.tpos(ts[0]);
+    T.x = x; T.y = y;
+    if (T.mode === 'place') { this.touchPlaceAt(x, y, false); return; }
+    if (T.mode === 'box') { this.drag.x1 = x; this.drag.y1 = y; return; }
+    if (T.mode === 'down' && Math.hypot(x - T.x0, y - T.y0) > 10) { T.moved = true; clearTimeout(T.lp); T.mode = 'pan'; T.lx = T.x0; T.ly = T.y0; }
+    if (T.mode === 'pan') { this.panScreen(-(x - T.lx), -(y - T.ly)); T.lx = x; T.ly = y; }
+  },
+  tEnd(e) {
+    e.preventDefault();
+    const T = this.t;
+    clearTimeout(T.lp);
+    if (e.touches.length > 0) { if (T.mode === 'pinch') T.mode = 'none'; return; }
+    const mode = T.mode; T.mode = null;
+    if (mode === 'box') { const d = this.drag; this.drag = null; if (d) this.boxSelect(d.x0, d.y0, d.x1, d.y1, false); return; }
+    if (mode === 'place') { if (this.placing) this.touchPlaced = true; return; }
+    if (mode === 'down') this.tap(T.x0, T.y0);
+  },
+  /* o fantasma fica acima do dedo para não ser coberto por ele */
+  touchPlaceAt(x, y, start) {
+    this.touchPlaced = false;
+    this.mouse.x = x; this.mouse.y = y - 56; this.mouse.in = true;
+    this.updatePlacing();
+    const pl = this.placing;
+    if (start && pl && BUILD_DEFS[pl.type].wall && !BUILD_DEFS[pl.type].gate) { pl.wallStart = { x: pl.tx, y: pl.ty }; this.updatePlacing(); }
+  },
+  confirmPlace() {
+    const pl = this.placing;
+    if (!pl) return;
+    if (pl.wallStart && pl.segments) this.wallUp();
+    else this.commitPlace(pl, [{ x: pl.tx, y: pl.ty }], false);
+    this.touchPlaced = false;
+  },
+  /* toque simples: seleciona ou comanda, conforme a seleção atual */
+  tap(x, y) {
+    if (this.mode === 'amove') { this.finishAMove(x, y, false); return; }
+    if (this.mode === 'rally') { this.setRally(x, y); return; }
+    const ent = this.pickAt(x, y, 12), now = performance.now();
+    const own = G.sel.filter((s) => s.team === G.player);
+    const ownUnits = own.length && own[0].kind === 'unit' ? own.filter((s) => s.kind === 'unit') : [];
+    if (ent && ent.team === G.player && this.lastClick.id === ent.id && now - this.lastClick.t < 380) {
+      this.lastClick = { t: 0, id: 0 };
+      if (ent.kind === 'unit') this.select(G.units.filter((u) => !u.dead && u.team === G.player && u.type === ent.type && Math.abs(Cam.w2s(u.x, u.y)[0] - Cam.W / 2) < Cam.W / 2 + 20 && Math.abs(Cam.w2s(u.x, u.y)[1] - Cam.H / 2) < Cam.H / 2 + 20));
+      else if (ent.kind === 'building') this.select(G.buildings.filter((b) => !b.dead && b.team === G.player && b.type === ent.type));
+      return;
+    }
+    this.lastClick = { t: now, id: ent ? ent.id : 0 };
+    if (ownUnits.length) {
+      if (ent && ent.team === G.player && ent.kind === 'unit') { this.select([ent]); return; }
+      if (ent && ent.team === G.player && ent.kind === 'building') {
+        const vil = ownUnits.some((u) => u.type === 'villager'), carrying = ownUnits.some((u) => u.carry.amt >= 1);
+        const work = vil && (!ent.built || ent.hp < ent.maxHp - 1 || ent.def.farm || (ent.def.dropoff && carrying));
+        if (!work) { this.select([ent]); return; }
+      }
+      const [wx, wy] = Cam.s2w(x, y);
+      this.rightClickWorld(wx, wy, false, ent || null);
+      return;
+    }
+    this.select(ent ? [ent] : []);
   },
 
   local(e) { const r = this.cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; },
@@ -502,7 +619,7 @@ const Input = {
     if (out.length) Sfx.play('select');
   },
 
-  pickAt(sx, sy) {
+  pickAt(sx, sy, pad = 0) {
     const z = Cam.zoom;
     let best = null, bd = -1e9;
     // unidades
@@ -512,7 +629,7 @@ const Input = {
       const p = Cam.w2s(u.x, u.y);
       const hh = u.animal ? (u.type === 'horse' ? 34 : u.type === 'cow' ? 28 : 14) : 36;
       const hw = u.animal ? (u.type === 'horse' || u.type === 'cow' ? 16 : 9) : 10;
-      if (Math.abs(sx - p[0]) <= hw * z && sy >= p[1] - hh * z && sy <= p[1] + 6 * z) {
+      if (Math.abs(sx - p[0]) <= hw * z + pad && sy >= p[1] - hh * z - pad && sy <= p[1] + 6 * z + pad) {
         const d = u.x + u.y;
         if (d > bd) { bd = d; best = u; }
       }
@@ -524,7 +641,7 @@ const Input = {
       const p = Cam.w2s(n.x, n.y);
       const tall = n.gsub === 'tree' ? 56 : n.gsub === 'carcass' ? 14 : 22;
       const hw = n.gsub === 'tree' ? 14 : 16;
-      if (Math.abs(sx - p[0]) <= hw * z && sy >= p[1] - tall * z && sy <= p[1] + 8 * z) {
+      if (Math.abs(sx - p[0]) <= hw * z + pad && sy >= p[1] - tall * z - pad && sy <= p[1] + 8 * z + pad) {
         const d = n.x + n.y;
         if (d > bd) { bd = d; best = n; }
       }

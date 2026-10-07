@@ -133,7 +133,7 @@ const Render = {
     this.resize();
   },
   resize() {
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const dpr = Math.min(IS_TOUCH ? 1.5 : 2, window.devicePixelRatio || 1);
     Cam.dpr = dpr;
     Cam.W = this.cv.clientWidth || window.innerWidth; Cam.H = this.cv.clientHeight || window.innerHeight;
     this.cv.width = Math.round(Cam.W * dpr); this.cv.height = Math.round(Cam.H * dpr);
@@ -159,14 +159,15 @@ const Render = {
     // 1. terreno
     const tc = map.terrainCanvas, N = map.N;
     if (tc) {
+      const ts = map.terrainScale || 1, tw = tc.width / ts, th = tc.height / ts;   // dimensões em px lógicos
       const srcW = W / z, srcH = H / z;
       let sx0 = (Cam.x - Cam.y) * HW + N * HW - srcW / 2, sy0 = (Cam.x + Cam.y) * HH - srcH / 2;
       let dx = 0, dy = 0, sw = srcW, sh = srcH;
       if (sx0 < 0) { dx = -sx0 * z; sw += sx0; sx0 = 0; }
       if (sy0 < 0) { dy = -sy0 * z; sh += sy0; sy0 = 0; }
-      if (sx0 + sw > tc.width) sw = tc.width - sx0;
-      if (sy0 + sh > tc.height) sh = tc.height - sy0;
-      if (sw > 0 && sh > 0) ctx.drawImage(tc, sx0, sy0, sw, sh, dx, dy, sw * z, sh * z);
+      if (sx0 + sw > tw) sw = tw - sx0;
+      if (sy0 + sh > th) sh = th - sy0;
+      if (sw > 0 && sh > 0) ctx.drawImage(tc, sx0 * ts, sy0 * ts, sw * ts, sh * ts, dx, dy, sw * z, sh * z);
     }
     // 2. água por trás
     Water.draw(ctx, W, H, t);

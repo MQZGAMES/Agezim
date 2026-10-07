@@ -278,7 +278,8 @@ class GameMap {
 
   /* ---------- terreno pré-renderizado (uma textura gigante) ---------- */
   async bakeTerrain(onProgress) {
-    const N = this.N, W = N * TW, H = N * TH, ox = N * HW;
+    const N = this.N, ts = TERRAIN_SCALE, W = Math.ceil(N * TW * ts), H = Math.ceil(N * TH * ts), ox = N * HW;
+    this.terrainScale = ts;
     const cv = makeCanvas(W, H);
     const ctx = cv.getContext('2d');
     const band = 64;
@@ -293,9 +294,9 @@ class GameMap {
       const rows = Math.min(band, H - y0);
       for (let y = 0; y < rows; y++) {
         const py = y0 + y;
-        const b = (py + 0.5) / HH;
+        const b = (py + 0.5) / ts / HH;
         for (let x = 0; x < W; x++) {
-          const a = (x + 0.5 - ox) / HW;
+          const a = ((x + 0.5) / ts - ox) / HW;
           const u = (a + b) * 0.5, v = (b - a) * 0.5;
           if (u < 0 || v < 0 || u >= N || v >= N) continue;
           let hj = this.sampleH(u, v);

@@ -3,12 +3,13 @@
   --gold: #e0b955; --gold2: #8a6a22; --ink: #f6ebce; --dim: #b9a77c;
   --stone: #6a6e74; --good: #5fd06a; --bad: #ee5a4a; --warn: #f0c24a;
   --serif: 'Cinzel', 'Trajan Pro', 'Palatino Linotype', Georgia, serif;
+  --bh: 198px;
   --sans: 'Segoe UI', 'Trebuchet MS', Tahoma, sans-serif;
 }
 * { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; overflow: hidden; background: #05080e; font-family: var(--sans); color: var(--ink); user-select: none; -webkit-user-select: none; }
+html, body { margin: 0; height: 100%; overflow: hidden; overscroll-behavior: none; touch-action: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; background: #05080e; font-family: var(--sans); color: var(--ink); user-select: none; -webkit-user-select: none; }
 #game { position: fixed; inset: 0; }
-#view { position: absolute; inset: 0; width: 100%; height: 100%; display: block; background: #0a3b66; }
+#view { position: absolute; left: 0; right: 0; top: 0; bottom: var(--bh); width: 100%; height: calc(100% - var(--bh)); display: block; background: #0a3b66; touch-action: none; }
 .hidden { display: none !important; }
 
 /* ---------- barra superior ---------- */
@@ -57,7 +58,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #05080e; fon
 
 /* ---------- painel inferior ---------- */
 #bottom {
-  position: absolute; left: 0; right: 0; bottom: 0; height: 198px; display: flex; align-items: stretch; z-index: 5;
+  position: absolute; left: 0; right: 0; bottom: 0; height: var(--bh); display: flex; align-items: stretch; z-index: 5;
   background: linear-gradient(180deg, #4b3320, #2a1a0e 40%, #1d1209);
   border-top: 3px solid var(--gold2); box-shadow: 0 -3px 14px rgba(0,0,0,0.6), inset 0 2px 0 rgba(255,225,160,0.22);
 }
@@ -186,4 +187,52 @@ button.mini { padding: 2px 8px; cursor: pointer; background: #3a2616; color: var
 @media (max-width: 1100px) {
   #cmdWrap { width: 320px; } #cmd { grid-template-columns: repeat(5, 56px); grid-template-rows: repeat(3, 56px); }
   #miniWrap { width: 300px; } #mini { width: 270px !important; height: 135px !important; }
+}
+
+/* ---------- botões flutuantes (toque) ---------- */
+.floatbtn { display: none; position: absolute; left: 8px; bottom: calc(var(--bh) + 8px); z-index: 6; padding: 8px 14px; font: 700 14px var(--sans); color: var(--ink); background: rgba(40,26,14,0.92); border: 2px solid var(--gold2); border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.5); }
+body.touch.hassel .floatbtn { display: block; }
+#placeBar { display: none; position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(var(--bh) + 14px); z-index: 7; gap: 12px; }
+#placeBar.on { display: flex; }
+.pb { padding: 14px 22px; font: 800 18px var(--sans); border-radius: 10px; border: 2px solid #1a0f06; box-shadow: 0 4px 12px rgba(0,0,0,0.6); color: #fff; }
+.pb.ok { background: linear-gradient(#5fd06a, #2e8a3a); } .pb.no { background: linear-gradient(#ee6a5a, #a8301e); }
+body:not(.canfs) #btnFull { display: none; }
+#mini { touch-action: none; }
+
+/* ---------- celular: paisagem ---------- */
+@media (pointer: coarse), (max-height: 560px) {
+  :root { --bh: 112px; }
+  #topbar { height: 36px; gap: 4px; padding: 0 max(8px, env(safe-area-inset-left)); }
+  .res { height: 28px; min-width: 0; padding: 0 8px 0 4px; font-size: 14px; gap: 4px; }
+  .res img { width: 20px; height: 20px; } .res span { min-width: 0; } .res small, .res.clock { display: none; }
+  .tb { height: 28px; min-width: 32px; } #btnSound, #btnHelp { display: none; }
+  #toasts { top: 42px; } .toast { font-size: 13px; padding: 4px 12px; }
+  #bottom { padding-bottom: env(safe-area-inset-bottom); }
+  #cmdWrap, #miniWrap, #infoWrap { padding: 4px; }
+  #cmdWrap { width: auto; } #cmd { grid-template-columns: repeat(8, 44px); grid-template-rows: repeat(2, 44px); gap: 3px; }
+  .slot .hk { display: none; } .slot .bd { font-size: 11px; }
+  #miniWrap { width: auto; } #mini { width: 176px !important; height: 88px !important; border-width: 2px; }
+  #info { padding: 4px 8px; gap: 8px; } .portrait { flex-basis: 52px; width: 52px; height: 52px; }
+  .iname { font-size: 15px; } .iname em { display: none; } .hpbar { height: 13px; margin: 2px 0; } .hpbar span { font-size: 10px; line-height: 13px; }
+  .stats { font-size: 11px; gap: 2px 8px; } .task { font-size: 11px; margin-top: 2px; } .stats span:nth-child(n+3) { display: none; }
+  .qi, .tile { width: 34px; height: 34px; } .grid { max-height: 78px; } .msum { font-size: 11px; margin-bottom: 2px; }
+  .idle-info .logo { font-size: 22px; letter-spacing: 4px; } .idle-info .hint { display: none; }
+  .carry { font-size: 11px; }
+  .card { padding: 16px 20px; } h1 { font-size: 40px; letter-spacing: 8px; } .sub { margin-bottom: 10px; }
+  .card.wide { max-height: 88vh; } .cols { grid-template-columns: 1fr 1fr; } .card ul { font-size: 12px; line-height: 1.4; }
+  button.big { padding: 10px 14px; font-size: 17px; }
+}
+@media (pointer: coarse) and (orientation: landscape) and (max-height: 430px) { #cmd { grid-template-columns: repeat(8, 40px); grid-template-rows: repeat(2, 40px); } :root { --bh: 104px; } #mini { width: 160px !important; height: 80px !important; } }
+
+/* ---------- celular: retrato ---------- */
+@media (pointer: coarse) and (orientation: portrait), (max-width: 640px) {
+  :root { --bh: 196px; }
+  #bottom { display: grid; grid-template-columns: 1fr auto; grid-template-rows: 84px auto; grid-template-areas: "info mini" "cmd cmd"; }
+  #infoWrap { grid-area: info; } #miniWrap { grid-area: mini; } #cmdWrap { grid-area: cmd; border: 0; justify-content: center; }
+  #cmd { grid-template-columns: repeat(8, calc((100vw - 16px - 21px) / 8)); grid-template-rows: repeat(2, 42px); }
+  #cmd .slot { height: 42px; }
+  #mini { width: 150px !important; height: 75px !important; }
+  .res { padding: 0 5px 0 3px; font-size: 13px; } .res img { width: 17px; height: 17px; }
+  .portrait { flex-basis: 46px; width: 46px; height: 46px; } .stats { display: none; }
+  #placeBar { bottom: calc(var(--bh) + 10px); }
 }

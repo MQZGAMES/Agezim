@@ -6,6 +6,10 @@
 const TW = 64, TH = 32, HW = 32, HH = 16;   // tamanho do tile isométrico
 const MAP_N = 96;                            // mapa MAP_N x MAP_N tiles
 
+/* dispositivo de toque: terreno em resolução menor (limite de canvas do iOS) e DPR menor */
+const IS_TOUCH = (typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches) || ("ontouchstart" in window && navigator.maxTouchPoints > 0);
+const TERRAIN_SCALE = IS_TOUCH ? 0.7 : 1;
+
 const T_DEEP = 0, T_SHALLOW = 1, T_SAND = 2, T_GRASS = 3;
 
 const TEAM_COLORS = [
