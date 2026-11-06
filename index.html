@@ -6,6 +6,10 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#2a1a0e">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Agezim">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <title>Agezim — Era dos Reinos</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%233a2616'/%3E%3Cpath d='M12 50 32 10l20 40z' fill='%23e0b955'/%3E%3Cpath d='M22 50 32 28l10 22z' fill='%233d7be0'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -157,5 +161,6 @@
 <script src="js/ai.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/main.js"></script>
+<script>if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(function(){});</script>
 </body>
 </html>
